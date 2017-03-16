@@ -1,4 +1,8 @@
 apiVersion: v1
-description: A Helm chart for Kubernetes
+description: |-
+  Set up ELK logging with automatic fluentd log aggregation for all stdout logs
+  in your kubernetes cluster. Log events will be tagged automatically with
+  helpful metadata such as pod name, container name, namespace, and some other
+  k8s metadata.
 name: elk
-version: 0.1.0
+version: 1.0.0
