@@ -4,5 +4,5 @@ description: |-
   in your kubernetes cluster. Log events will be tagged automatically with
   helpful metadata such as pod name, container name, namespace, and some other
   k8s metadata.
-name: elk
+name: elk-cluster-addon
 version: 1.0.0
