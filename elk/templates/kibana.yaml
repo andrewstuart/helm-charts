@@ -3,18 +3,20 @@ kind: Ingress
 metadata:
   name: kibana
   namespace: kube-system
+  {{ if .Values.auth }}
   annotations:
     kubernetes.io/tls-acme: "true"
     ingress.kubernetes.io/auth-type: basic
     ingress.kubernetes.io/auth-secret: ingress-auth
     ingress.kubernetes.io/auth-realm: "Please authenticate."
+  {{ end }}
 spec:
   tls:
   - secretName: logs-cw-tls
     hosts:
-    - logs.{{ .Values.global.dnsSuffix }}
+    - logs.{{ .Values.dnsSuffix }}
   rules:
-  - host: logs.{{ .Values.global.dnsSuffix }}
+  - host: logs.{{ .Values.dnsSuffix }}
     http:
       paths:
       - path: /
