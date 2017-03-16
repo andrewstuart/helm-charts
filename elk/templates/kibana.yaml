@@ -14,9 +14,9 @@ spec:
   tls:
   - secretName: logs-cw-tls
     hosts:
-    - logs.{{ .Values.dnsSuffix }}
+    - {{ required "Please set a value for `dnsName`." .Values.dnsName }}
   rules:
-  - host: logs.{{ .Values.dnsSuffix }}
+  - host: {{ .Values.dnsName }}
     http:
       paths:
       - path: /
