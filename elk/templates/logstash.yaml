@@ -1,0 +1,67 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: logstash
+  namespace: kube-system
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: logstash
+        tier: logging
+    spec:
+      containers:
+      - name: logstash
+        image: logstash
+        args: 
+        - "-f"
+        - "/logstash/server.conf"
+        - "--debug"
+        resources:
+          requests:
+            cpu: 250m
+            memory: 512Mi
+        ports:
+        - containerPort: 5000
+          name: logstash
+          protocol: TCP
+        volumeMounts:
+        - name: log-conf
+          mountPath: /logstash
+      volumes:
+      - name: log-conf
+        configMap:
+          name: logstash-server-conf
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: logstash
+  namespace: kube-system
+spec:
+  ports:
+  - port: 5000
+    targetPort: 5000
+  selector:
+    app: logstash
+    tier: logging
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: logstash-server-conf
+  namespace: kube-system
+data:
+  server.conf: |
+    input {
+      tcp {
+        port => 5000
+      }
+    }
+
+    output {
+      elasticsearch {
+        hosts => "elasticsearch.kube-system:9200"
+      }
+    }

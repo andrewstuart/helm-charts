@@ -1,0 +1,75 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: kibana
+  namespace: kube-system
+  annotations:
+    kubernetes.io/tls-acme: "true"
+    ingress.kubernetes.io/auth-type: basic
+    ingress.kubernetes.io/auth-secret: ingress-auth
+    ingress.kubernetes.io/auth-realm: "Please authenticate."
+spec:
+  tls:
+  - secretName: logs-cw-tls
+    hosts:
+    - logs.{{ .Values.global.dnsSuffix }}
+  rules:
+  - host: logs.{{ .Values.global.dnsSuffix }}
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: kibana
+          servicePort: 80
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: kibana
+  namespace: kube-system
+  labels:
+    app: kibana
+    tier: logging
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: kibana
+        tier: logging
+    spec:
+      containers:
+      - name: kibana
+        image: kibana
+        env:
+        - name: ELASTICSEARCH_URL
+          value: http://elasticsearch:9200
+        livenessProbe:
+          httpGet:
+            path: /app/kibana
+            port: 5601
+        resources:
+          requests:
+            cpu: 100m
+            memory: 512Mi
+        ports:
+        - containerPort: 5601
+          name: web
+          protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kibana
+  namespace: kube-system
+  labels:
+    app: kibana
+    tier: logging
+spec:
+  ports:
+  - port: 80
+    targetPort: 5601
+    name: web
+  selector:
+    app: kibana
+    tier: logging

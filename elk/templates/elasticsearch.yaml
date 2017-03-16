@@ -1,0 +1,110 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: elasticsearch-logging
+  namespace: kube-system
+  labels:
+    k8s-app: elasticsearch-logging
+    version: v1
+    kubernetes.io/cluster-service: "true"
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        k8s-app: elasticsearch-logging
+        version: v1
+        kubernetes.io/cluster-service: "true"
+      annotations:
+        scheduler.alpha.kubernetes.io/critical-pod: ""
+        scheduler.alpha.kubernetes.io/tolerations: '[{"key":"CriticalAddonsOnly", "operator":"Exists"}]'
+        pod.alpha.kubernetes.io/init-containers: '[
+          {
+          "name": "sysctl",
+            "image": "busybox",
+            "imagePullPolicy": "Always",
+            "command": ["sysctl", "-w", "vm.max_map_count=262144"],
+            "securityContext": {
+              "privileged": true
+            }
+          }
+        ]'
+    spec:
+      containers:
+      - name: elasticsearch-logging
+        image: elasticsearch
+        resources:
+          limits:
+            memory: 4Gi
+          requests:
+            cpu: 2
+            memory: 2Gi
+        env:
+        - name: ES_JAVA_OPTS
+          value: "-Xms3000m -Xmx3000m"
+        - name: JAVA_OPTS
+          value: '-server'
+        - name: MAX_LOCKED_MEMORY
+          value: '120000'
+        ports:
+        - containerPort: 9200
+          name: web
+        - containerPort: 9300
+          name: client
+        volumeMounts:
+        - name: data
+          mountPath: /usr/share/elasticsearch/data
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: elasticsearch-data
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: elasticsearch
+  namespace: kube-system
+spec:
+  ports:
+  - port: 9200
+    targetPort: 9200
+    name: rest
+  selector:
+    k8s-app: elasticsearch-logging
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: elasticsearch-logging
+  namespace: kube-system
+  labels:
+    k8s-app: elasticsearch-logging
+    kubernetes.io/cluster-service: "true"
+    kubernetes.io/name: "Elasticsearch"
+spec:
+  ports:
+  - port: 9200
+    protocol: TCP
+    targetPort: web
+  selector:
+    k8s-app: elasticsearch-logging
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  annotations:
+    volume.beta.kubernetes.io/storage-class: standard
+  name: elasticsearch-data
+  namespace: kube-system
+  labels:
+    # insert any desired labels to identify your claim
+    app: elasticsearch
+    tier: logs
+spec:
+  # The metadata.name field from the PersistentVolume to match
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      # The amount of the volume's storage to request
+      storage: 250Gi
