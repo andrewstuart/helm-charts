@@ -14,7 +14,8 @@ spec:
   tls:
   - secretName: logs-cw-tls
     hosts:
-    - {{ required "Please set a value for `dnsName`." .Values.dnsName }}
+      # TODO make this use `required` after the next (post-2.2.2) master release
+    - {{ default "... Please set a value for `dnsName`." .Values.dnsName }}
   rules:
   - host: {{ .Values.dnsName }}
     http:

@@ -107,4 +107,4 @@ spec:
   resources:
     requests:
       # The amount of the volume's storage to request
-      storage: {{ required "Please set a PVC request size (in Gi) as `pvcStorage`" .Values.pvcStorage }}
+      storage: {{ default "Please set a PVC request size (in Gi) as `pvcStorage`" .Values.pvcStorage }}
